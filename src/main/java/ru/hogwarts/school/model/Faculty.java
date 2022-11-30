@@ -1,57 +1,59 @@
 package ru.hogwarts.school.model;
 
-import java.security.PrivateKey;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
+
+import javax.persistence.*;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Getter
+@Setter
+@Entity
+@Slf4j
+@Table(name = "faculty")
 public class Faculty {
-
-    private long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+    @Column(name = "name")
     private String name;
+    @Column(name = "color")
     private String color;
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
+    @OneToMany(mappedBy = "faculty")
+    private Set<Student> students = new HashSet<>();
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
+            return false;
         Faculty faculty = (Faculty) o;
-        return Objects.equals(id, faculty.id) && Objects.equals(name, faculty.name) && Objects.equals(color, faculty.color);
+        return id != null && Objects.equals(id, faculty.id);
     }
-
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, color);
+        return getClass().hashCode();
+    }
+    @PostRemove
+    public void logFacultyRemoval() {
+        log.info("Faculty with id={} removed", id);
     }
 
-    @Override
-    public String toString() {
-        return "Faculty{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", color='" + color + '\'' +
-                '}';
+    @PostPersist
+    public void logFacultyAdded() {
+        log.info("Add new faculty with name={}, color={}", name, color);
+    }
+
+    @PostUpdate
+    public void logFacultyUpdated() {
+        log.info("Faculty with id={} updated", id);
     }
 }
